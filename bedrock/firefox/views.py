@@ -268,6 +268,15 @@ def show_49_0_whatsnew(version):
     return version == Version('49.0')
 
 
+def show_50_whatsnew(version):
+    try:
+        version = Version(version)
+    except ValueError:
+        return False
+
+    return version >= Version('50.0')
+
+
 def show_40_firstrun(version):
     try:
         version = Version(version)
@@ -384,6 +393,16 @@ class FirstrunLearnMoreView(LatestFxView):
 
 class WhatsnewView(LatestFxView):
 
+    send_to_device_locales = [
+        'de',
+        'es-ES',
+        'fr',
+        'id',
+        'pl',
+        'pt-BR',
+        'ru',
+    ]
+
     def get_context_data(self, **kwargs):
         ctx = super(WhatsnewView, self).get_context_data(**kwargs)
 
@@ -392,6 +411,13 @@ class WhatsnewView(LatestFxView):
         match = re.match(r'\d{1,2}', version)
         ctx['version'] = version
         ctx['num_version'] = int(match.group(0)) if match else ''
+
+        # add send to device context for whatsnew >= 50.0
+        locale = l10n_utils.get_locale(self.request)
+        if (locale.startswith('en-') or locale in self.send_to_device_locales):
+            ctx['show_send_to_device'] = True
+        else:
+            ctx['show_send_to_device'] = False
 
         return ctx
 
@@ -409,11 +435,13 @@ class WhatsnewView(LatestFxView):
             template = 'firefox/dev-whatsnew.html'
         elif channel == 'nightly':
             template = 'firefox/nightly_whatsnew.html'
+        elif show_50_whatsnew(version):
+            template = 'firefox/whatsnew/whatsnew-mobile-download-50.html'
         # zh-TW on 49.0 gets a special template
         elif locale == 'zh-TW' and show_49_0_whatsnew(version):
-            template = 'firefox/whatsnew-zh-TW-49.html'
+            template = 'firefox/whatsnew/whatsnew-zh-tw-49.html'
         elif show_42_whatsnew(version):
-            template = 'firefox/whatsnew_42/whatsnew.html'
+            template = 'firefox/whatsnew/whatsnew-42.html'
         else:
             template = 'firefox/australis/whatsnew.html'
 
